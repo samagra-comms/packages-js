@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { GSWhatsAppMessage, MediaSizeLimit, MethodType } from './types';
 import {
-  GSWhatsAppMessage,
+  StylingTag,
+  MessageMediaError,
   MessageId,
   SenderReceiverInfo,
   XMessagePayload,
@@ -8,12 +10,10 @@ import {
   MessageMedia,
   ButtonChoice,
   MediaCategory,
-  MediaSizeLimit,
-  StylingTag,
-  MessageMediaError,
-  MethodType,
-} from './types';
-import { XMessage, MessageState, MessageType } from './xMessage';
+  XMessage,
+  MessageState,
+  MessageType,
+} from '@samagra-x/xmessage';
 import { FileUtil } from './utils';
 import { URLSearchParams } from 'url';
 import { uploadFileFromPath } from './minioClient';
@@ -67,7 +67,7 @@ const getInboundInteractiveContentText = (message: GSWhatsAppMessage) => {
   if (interactiveContent && interactiveContent.length > 0) {
     try {
       const node: any = JSON.parse(interactiveContent);
-      console.log('interactive content node:', node);
+      // console.log('interactive content node:', node);
 
       const type: string = node.type !== undefined ? node.type : '';
 
@@ -88,7 +88,7 @@ const getInboundInteractiveContentText = (message: GSWhatsAppMessage) => {
     }
   }
 
-  console.log('Inbound interactive text:', text);
+  // console.log('Inbound interactive text:', text);
   return text;
 };
 
@@ -129,7 +129,7 @@ const getMediaInfo = async (message: GSWhatsAppMessage) => {
   if (mediaContent && mediaContent.length > 0) {
     try {
       const node = JSON.parse(mediaContent);
-      console.log('media content node:', node);
+      // console.log('media content node:', node);
 
       const url = node.url || '';
       const signature = node.signature || '';
@@ -230,33 +230,35 @@ const uploadInboundMediaFile = async (
   return result;
 };
 
-const getInboundMediaMessage = async (message: GSWhatsAppMessage): Promise<MessageMedia> => {
-  try{
-    const mediaInfo: Record<string, any> = getMediaInfo(message);
-  const mediaData: Record<string, any> = await uploadInboundMediaFile(
-    message.messageId || '',
-    mediaInfo.mediaUrl,
-    mediaInfo.mime_type
-  );
+const getInboundMediaMessage = async (
+  message: GSWhatsAppMessage
+): Promise<MessageMedia> => {
+  try {
+    const mediaInfo: Record<string, any> = await getMediaInfo(message);
+    const mediaData: Record<string, any> = await uploadInboundMediaFile(
+      message.messageId || '',
+      mediaInfo.mediaUrl,
+      mediaInfo.mime_type
+    );
 
-  console.log("media data:", mediaData)
+    // console.log('media data:', mediaData);
 
-  const media: MessageMedia = {
-    text: mediaData.name,
-    url: mediaData.url,
-    category: mediaInfo.category as MediaCategory,
-  };
+    const media: MessageMedia = {
+      text: mediaData.name,
+      url: mediaData.url,
+      category: mediaInfo.category as MediaCategory,
+    };
 
-  if (mediaData.error) {
-    media.messageMediaError = mediaData.error as MessageMediaError;
-  }
+    if (mediaData.error) {
+      media.messageMediaError = mediaData.error as MessageMediaError;
+    }
 
-  if (mediaData.size) {
-    media.size = mediaData.size as number;
-  }
+    if (mediaData.size) {
+      media.size = mediaData.size as number;
+    }
 
-  return media;
-  }catch(err){
+    return media;
+  } catch (err) {
     console.log('Error in getInboundMediaMessage:', err);
     return {} as MessageMedia;
   }
@@ -275,7 +277,7 @@ const getInboundLocationParams = (
   if (locationContent && locationContent.length > 0) {
     try {
       const node: any = JSON.parse(locationContent);
-      console.log('locationcontent node:', node);
+      // console.log('locationcontent node:', node);
 
       longitude =
         node.longitude !== undefined ? parseFloat(node.longitude) : null;
@@ -511,11 +513,11 @@ async function optInUser(
   optInBuilder.searchParams.append('messageId', '123456789');
 
   const expanded = optInBuilder;
-  console.log(expanded);
+  // console.log(expanded);
 
   try {
     const response = await axios.get<string>(expanded.toString());
-    console.log(response.data);
+    // console.log(response.data);
   } catch (error: any) {
     console.error('Error:', error.response?.data || error.message || error);
   }
@@ -597,7 +599,7 @@ class GSWhatsappService {
 function getOutboundListActionContent(xMsg: XMessage): string {
   const rows: SectionRow[] = xMsg.payload.buttonChoices?.map((choice) =>
     createSectionRow(choice.key, choice.text)
-  ) || [{id: "", title: ""}];
+  ) || [{ id: '', title: '' }];
 
   const action: Action = {
     button: 'Options',
@@ -682,10 +684,9 @@ function setBuilderCredentialsAndMethod(
 export const getAdapterByID = async (
   adapterID: string
 ): Promise<JsonNode | null> => {
-  const cacheKey = `adapter-by-id: ${adapterID}`;
-  console.log(
-    `BotService:getAdapterByID::Calling get adapter by id from uci api: ${adapterID}`
-  );
+  // console.log(
+  //   `BotService:getAdapterByID::Calling get adapter by id from uci api: ${adapterID}`
+  // );
 
   // if (cache.has(cacheKey)) {
   //   console.log(`getAdapterByID from cache: ${cache.get(cacheKey)}`);
@@ -697,34 +698,37 @@ export const getAdapterByID = async (
       'admin-token': configService.getConfig('adminToken'),
     },
   };
-    try {
-      const response = await axios.get(`${configService.getConfig('baseUrl')}/admin/adapter/${adapterID}`, config);
-      // console.log(
-      //   `BotService:getAdapterByID::Got Data From UCI Api : cache key : ${cacheKey} cache data : ${cache.get(
-      //     cacheKey
-      //   )}`
-      // );
+  try {
+    const response = await axios.get(
+      `${configService.getConfig('baseUrl')}/admin/adapter/${adapterID}`,
+      config
+    );
+    // console.log(
+    //   `BotService:getAdapterByID::Got Data From UCI Api : cache key : ${cacheKey} cache data : ${cache.get(
+    //     cacheKey
+    //   )}`
+    // );
 
-      if (response.data !== null) {
-        const root = response.data;
-        
-        if (
-          root != null &&
-          root.result != null &&
-          root.result.id != null &&
-          root.result.id !== ''
-          ) {
-          return root.result;
-        }
+    if (response.data !== null) {
+      const root = response.data;
 
-        return null;
-      } else {
-        return null;
+      if (
+        root != null &&
+        root.result != null &&
+        root.result.id != null &&
+        root.result.id !== ''
+      ) {
+        return root.result;
       }
-    } catch (error: any) {
-      console.error(`BotService:getAdapterByID::Exception: ${error}`);
+
+      return null;
+    } else {
       return null;
     }
+  } catch (error: any) {
+    console.error(`BotService:getAdapterByID::Exception: ${error}`);
+    return null;
+  }
   // }
 };
 
@@ -733,7 +737,7 @@ export const getAdapterCredentials = async (
 ): Promise<JsonNode | null> => {
   const cacheKey = `adapter-credentials: ${adapterID}`;
   const adapter = await getAdapterByID(adapterID);
-  console.log(`getAdapterByID: ${JSON.stringify(adapter)}`);
+  // console.log(`getAdapterByID: ${JSON.stringify(adapter)}`);
 
   if (adapter !== null) {
     let vaultKey: string | null;
@@ -756,7 +760,6 @@ export const getAdapterCredentials = async (
 
 type JsonNode = Record<string, any>;
 
-
 export const getVaultCredentials = async (
   secretKey: string
 ): Promise<JsonNode | null> => {
@@ -777,9 +780,9 @@ export const getVaultCredentials = async (
 
   // const cacheKey = `adapter-credentials-by-id: ${secretKey}`;
 
-  console.log(
-    `BotService:getVaultCredentials::Calling get vault credentials from uci api: ${secretKey}`
-  );
+  // console.log(
+  //   `BotService:getVaultCredentials::Calling get vault credentials from uci api: ${secretKey}`
+  // );
 
   // if (cache.has(cacheKey)) {
   //   console.log(`getVaultCredentials from cache : ${cache.get(cacheKey)}`);
@@ -787,28 +790,28 @@ export const getVaultCredentials = async (
   // } else {
   //   console.log(`getVaultCredentials from axios : ${cache.get(cacheKey)}`);
 
-    const response = await webClient.get(`/admin/secret/${secretKey}`);
+  const response = await webClient.get(`/admin/secret/${secretKey}`);
 
-    // console.log(
-    //   `BotService:getVaultCredentials::Got Data From UCI Api : cache key : ${cacheKey} cache data : ${cache.get(
-    //     cacheKey
-    //   )}`
-    // );
-    if (response.data !== null) {
-      try {
-        const credentials: Record<string, string> = {};
-        const root = response.data;
-        if (root.result !== null && root.result !== null) {
-          return root.result[secretKey];
-        }
-        return null;
-      } catch (e: any) {
-        console.error(`BotService:getVaultCredentials::Exception: ${e}`);
-        return null;
+  // console.log(
+  //   `BotService:getVaultCredentials::Got Data From UCI Api : cache key : ${cacheKey} cache data : ${cache.get(
+  //     cacheKey
+  //   )}`
+  // );
+  if (response.data !== null) {
+    try {
+      const credentials: Record<string, string> = {};
+      const root = response.data;
+      if (root.result !== null && root.result !== null) {
+        return root.result[secretKey];
       }
+      return null;
+    } catch (e: any) {
+      console.error(`BotService:getVaultCredentials::Exception: ${e}`);
+      return null;
     }
+  }
 
-    return null;
+  return null;
   // }
 };
 
@@ -820,9 +823,9 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
 
   try {
     const credentials = await getAdapterCredentials(adapterIdFromXML);
-    console.log(credentials)
+    // console.log(credentials);
     if (credentials && Object.keys(credentials).length !== 0) {
-      let text: string = xMsg.payload.text || "";
+      let text: string = xMsg.payload.text || '';
       let builder = getURIBuilder();
 
       if (xMsg.messageState === MessageState.OPTED_IN) {
@@ -892,7 +895,9 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
         let plainText: boolean = true;
         // let msgType: MessageType = MessageType.TEXT;
         const stylingTag: StylingTag | undefined =
-          xMsg.payload.stylingTag !== null ? xMsg.payload.stylingTag : undefined;
+          xMsg.payload.stylingTag !== null
+            ? xMsg.payload.stylingTag
+            : undefined;
         builder = setBuilderCredentialsAndMethod(
           builder,
           MethodType.SIMPLEMESSAGE,
@@ -904,6 +909,7 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
         builder.set('phone_number', '91' + xMsg.to.userID);
         builder.set('msg_type', xMsg.messageType);
         builder.set('channel', 'WHATSAPP');
+        builder.set('msg_id', xMsg.messageId.channelMessageId);
 
         if (
           stylingTag !== undefined &&
@@ -912,7 +918,7 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
         ) {
           if (stylingTag === StylingTag.LIST) {
             const content: string = getOutboundListActionContent(xMsg);
-            console.log('list content: ', content);
+            // console.log('list content: ', content);
 
             if (content.length > 0) {
               builder.set('interactive_type', 'list');
@@ -922,7 +928,7 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
             }
           } else if (stylingTag === StylingTag.QUICKREPLYBTN) {
             const content: string = getOutboundQRBtnActionContent(xMsg);
-            console.log('QR btn content: ', content);
+            // console.log('QR btn content: ', content);
 
             if (content.length > 0) {
               builder.set('interactive_type', 'dr_button');
@@ -955,8 +961,10 @@ export const convertXMessageToMsg = async (xMsg: XMessage) => {
       }
 
       console.log(text);
-      const expanded = new URL(`${configService.getConfig('gupshupUrl')}?${builder}`);
-      console.log(expanded);
+      const expanded = new URL(
+        `${configService.getConfig('gupshupUrl')}?${builder}`
+      );
+      // console.log(expanded);
 
       try {
         const response: GSWhatsappOutBoundResponse =

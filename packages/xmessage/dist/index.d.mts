@@ -8,9 +8,9 @@ declare class ConversationStage {
     state: State;
 }
 declare class MessageId {
-    Id: string;
+    Id?: string;
     channelMessageId: string;
-    replyId: string;
+    replyId?: string;
     constructor(builder: MessageIdBuilder);
     static builder(): MessageIdBuilder;
 }
@@ -52,6 +52,7 @@ type XMessagePayload = {
     flow?: string;
     questionIndex?: number;
     mediaCaption?: string;
+    metaData?: string;
 };
 declare class XMessageThread {
     offset: number;
@@ -157,4 +158,4 @@ declare class XMessage {
     setProvider?(provider: string): void;
 }
 
-export { MessageState, MessageType, XMessage };
+export { Address, ButtonChoice, ContactCard, ConversationStage, DeviceType, LocationParams, MediaCategory, MessageId, MessageIdBuilder, MessageMedia, MessageMediaError, MessageState, MessageType, SenderReceiverInfo, State, StylingTag, Transformer, XMessage, type XMessagePayload, XMessageThread };

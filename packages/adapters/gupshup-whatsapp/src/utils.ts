@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import {StylingTag, XMessagePayload} from './types';
+import {StylingTag, XMessagePayload} from '@samagra-x/xmessage';
 
 export class FileUtil {
   static isFileTypeImage(mimeType: string): boolean {
@@ -48,19 +48,20 @@ export class FileUtil {
     }
 
     const fileSizeInBytes = inputBytes.length;
-    const maxSizeInBytes = maxSize * 1024 * 1024; // Convert maxSize from MB to Bytes
+    const maxSizeInBytes = maxSize; // Convert maxSize from MB to Bytes
 
     if (fileSizeInBytes > maxSizeInBytes) {
-      return `File size exceeds the maximum allowed size of ${maxSize} MB.`;
+      return `File size exceeds the maximum allowed size of ${maxSize} bytes.`;
     }
 
-    return "null";
+    return "";
   }
 
   static getUploadedFileName(mimeType: string, messageId: string): string {
     // Example logic: Construct a filename based on the MIME type and message ID
     const sanitizedMimeType = mimeType.replace('/', '_');
-    const fileName = `${sanitizedMimeType}_${messageId}`;
+    const parts = sanitizedMimeType.split('_');
+    const fileName = `${sanitizedMimeType}_${messageId}.${parts[1]}`;
 
     return fileName;
   }
@@ -72,8 +73,8 @@ export class FileUtil {
     }
 
     // Example: Save the file to a local directory
-    const directoryPath = 'your/local/directory/path'; // Adjust the path accordingly
-    const fileName = FileUtil.getUploadedFileName(mimeType, name);
+    const directoryPath = '/tmp/'; // Adjust the path accordingly
+    const fileName = name;
     const filePath = path.join(directoryPath, fileName);
 
     try {
